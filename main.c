@@ -1,34 +1,55 @@
 #include "crypto_defines.h"
 
+
+
 main(int argc, char *argv[])
  {
- EVP_MD_CTX *mdctx;
- const EVP_MD *md;
- char mess1[] = "Test Message\n";
- char mess2[] = "Hello World\n";
- char digest_bytename[] = "sha256";
- unsigned char md_value[EVP_MAX_MD_SIZE];
- int md_len, i;
+
+ unsigned char *filename, *key;
+ unsigned int i, key_length;
  OpenSSL_add_all_digests();
 
- md = EVP_get_digestbyname("sha256");
- if(!md) {
-        printf("Unknown message digest %s\n", digest_bytename);
-        exit(1);
- }
- mdctx = EVP_MD_CTX_create();
- EVP_DigestInit_ex(mdctx, md, NULL);
- EVP_DigestUpdate(mdctx, mess1, strlen(mess1));
- EVP_DigestUpdate(mdctx, mess2, strlen(mess2));
- EVP_DigestFinal_ex(mdctx, md_value, (unsigned int *)&md_len);
- EVP_MD_CTX_destroy(mdctx);
- printf("Digest is: ");
- for(i = 0; i < md_len; i++)
-        printf("%02x", md_value[i]);
+ filename = generate_file_key((unsigned char *)"file.txt", (unsigned char *)"Secret", 
+	 strlen("Secret"), &key_length);
+
+ puts("Encrypted Filename:" );
+ for (i = 0; i < key_length; i++)
+	 printf("%02x", filename[i]);
+
  printf("\n");
- /* Call this once before exit. */
+
+ key = generate_file_key(filename, (unsigned char *)"Secret", strlen("Secret"), &key_length);
+
+ puts("Encryption key:");
+ for ( i = 0; i < key_length; i++)
+	 printf("%02x", key[i]);
+
+ printf("\n");
+
+ free(key);
  getchar();
- EVP_cleanup();
  exit(0);
 
  }
+
+
+unsigned char* generate_file_key(const unsigned char *filename, unsigned char* key, 
+	unsigned int keylength, unsigned int *file_key_length)
+{
+
+	unsigned char* file_key = (unsigned char *)malloc(sizeof(*file_key) * EVP_MAX_MD_SIZE);
+	unsigned int len;
+	const EVP_MD *md;
+	HMAC_CTX ctx;
+
+	md = EVP_get_digestbyname(DEFAULT_DIGEST);
+	
+
+
+	HMAC_CTX_init(&ctx);
+	HMAC_Init_ex(&ctx, key, keylength, md, NULL);
+	HMAC_Update(&ctx, filename, strlen((char *)filename));
+	HMAC_Final(&ctx, file_key, file_key_length); 
+
+	return file_key;
+}
