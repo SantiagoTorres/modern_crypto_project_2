@@ -81,6 +81,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="c99_code.h" />
     <ClCompile Include="main.c" />
   </ItemGroup>
   <ItemGroup>
