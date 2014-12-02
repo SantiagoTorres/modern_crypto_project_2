@@ -122,7 +122,7 @@ int main(int argc, char * argv[]){
 	unsigned char *keyfromfile;
 	unsigned int i, key_length;
 	size_t blocksize = BLOCKSIZE;
-	char *filename, *encryption_key, *key_filename;
+	char *filename, *encryption_key;
 
 	FILE *FileIN;
 	FILE *FileOUT;
@@ -158,18 +158,12 @@ int main(int argc, char * argv[]){
 	binary_filename = generate_file_key(argv[2], keyfromfile, keyFileSize, &key_length);
 	filename = (char *)malloc(sizeof(*filename) * 2* (key_length+1));
 	binary_to_string(filename, binary_filename, key_length);
-	key_filename = (char *)malloc(sizeof(*key_filename) * strlen(filename) + 5);
-	sprintf(key_filename, "%s.key", filename);
 	printf("done!\n");
 
 	printf("[Key derivation] Calculating encryption key...");
 	realkey = generate_file_key(binary_filename, keyfromfile, keyFileSize, &key_length);
 	encryption_key = (char *)malloc(sizeof(*encryption_key) * 2 * (key_length + 1));
-	binary_to_string(encryption_key, realkey, key_length);
 	printf("done!\n");
-
-	realkeyfile = fopen(key_filename, "wt");
-	fwrite(encryption_key, sizeof(char), strlen(encryption_key), realkeyfile);
 
 
 	/* open sessame */
@@ -197,7 +191,6 @@ int main(int argc, char * argv[]){
 
 	/* Output the result */
 	printf("[Preprocess] Wrote the file to: %s\n", filename);
-	printf("[Preprocess] Encryption key is located at %s\n", key_filename);
 
 	/* cleanup our mess */
 	fclose(FileIN);
@@ -209,7 +202,6 @@ terminate:
 	free(filename);
 	free(binary_filename);
 	free(encryption_key);
-	free(key_filename);
 
 	return 0;
 
