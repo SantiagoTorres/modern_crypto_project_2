@@ -23,5 +23,8 @@
     <ClInclude Include="crypto_defines.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="c99_code.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
