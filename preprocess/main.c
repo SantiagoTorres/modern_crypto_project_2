@@ -11,9 +11,8 @@ void enc(FILE *inFilePointer, FILE *outFilePointer, unsigned char * realkey)
 	unsigned char *inputData;
 	unsigned char *outputData;
 	unsigned int blocksize;
-	unsigned int padding;
+	unsigned int length;
 	unsigned char *initVector;
-	unsigned int i;
 
 	/*Get Size of Input File */
 	fseek(inFilePointer, 0L, SEEK_END);
@@ -22,30 +21,27 @@ void enc(FILE *inFilePointer, FILE *outFilePointer, unsigned char * realkey)
 	fseek(inFilePointer, 0L, SEEK_SET);
 
 	// we need the blocksize for a bunch of operations around here...
-	blocksize = EVP_CIPHER_block_size(ENC_ALGO);
+	blocksize = ENC_BLOCKSIZE;
 
-	// we need to include the padding bytes into the equation here...
-	inputData = (unsigned char *)malloc((sizeof(*inputData) * inFileSize) + sizeof(padding));
+	// we need to include the length bytes into the equation here...
+	inputData = (unsigned char *)malloc((sizeof(*inputData) * inFileSize) + sizeof(length));
 
 	// ugly kluges here, we need to allocate a rounded-up blocksized buffer. 
 	// So we divide by blocksize, add 1 and then multiply by blocksize
-	outputData = (unsigned char *)malloc(((sizeof(*inputData) * inFileSize) + sizeof(padding) / blocksize + 1 * blocksize));
+	outputData = (unsigned char *)malloc(((sizeof(*inputData) * inFileSize) + sizeof(length) / blocksize + 1 * blocksize));
 
 
-	// calculate the padding like this, also write it
-	padding = blocksize - ((inFileSize + sizeof(padding)) % blocksize);
-	printf("\t[Encryption] padding: %u\n", padding);
-	memcpy(inputData, &padding, sizeof(padding));
+	// calculate the length like this, also write it
+	length = inFileSize;
+	printf("\t[Encryption] filesize: %u\n", length);
+	memcpy(inputData, &length, sizeof(length));
 
 	/*Read the Input File*/
 	printf("\t[Encryption] Reading input data...");
-	fread(inputData + sizeof(padding), sizeof(char), inFileSize, inFilePointer);
-	printf("done!\n", inputData + sizeof(padding));
+	fread(inputData + sizeof(length), sizeof(char), inFileSize, inFilePointer);
+	printf("done!\n", inputData + sizeof(length));
 
-	inFileSize += sizeof(padding);
-
-	
-
+	inFileSize += sizeof(length);
 
 	/* Generate an initialization vector */
 	initVector = (unsigned char *)malloc(sizeof(*initVector) * blocksize);
@@ -60,7 +56,7 @@ void enc(FILE *inFilePointer, FILE *outFilePointer, unsigned char * realkey)
 	printf("\t[Encryption] Encrypting data...");
 	EVP_EncryptInit(&ctx, ENC_ALGO, realkey, initVector);       /*Init the Context*/
 	EVP_EncryptUpdate(&ctx, outputData, &outputLength1, inputData, inFileSize);  /*Encrypt*/
-	EVP_EncryptFinal(&ctx, outputData + outputLength1, &outputLength2);  /*Final Ouput and Padding */
+	EVP_EncryptFinal(&ctx, outputData + outputLength1, &outputLength2);  /*Final Ouput and length */
 	printf("done!\n");
 
 	printf("\t[Encryption] Writing data to file...");
@@ -69,6 +65,7 @@ void enc(FILE *inFilePointer, FILE *outFilePointer, unsigned char * realkey)
 
 	/*Cleanup! Necessary since were not using _ex version of above functions*/
 	EVP_CIPHER_CTX_cleanup(&ctx);
+
 
 	free(initVector);
 	
@@ -104,8 +101,7 @@ void string_to_binary(unsigned char *binary, char *string, unsigned int length)
 unsigned char* generate_file_key(const unsigned char *filename, unsigned char* key,
 	unsigned int keylength, unsigned int *file_key_length)
 {
-	unsigned char* file_key = (unsigned char *)malloc(sizeof(*file_key) * EVP_MAX_MD_SIZE);
-	unsigned int len;
+	unsigned char* file_key = (unsigned char *)malloc(sizeof(*file_key) * BLOCKSIZE);
 	HMAC_CTX ctx;
 
 	HMAC_CTX_init(&ctx);

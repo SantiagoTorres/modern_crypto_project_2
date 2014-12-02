@@ -10,6 +10,7 @@
 #include <openssl\sha.h>
 #include <openssl\evp.h>
 #include <openssl\hmac.h>
+#include <ctype.h>
 
 /* this defines hold the selected algorithms to use */
 #define ENC_ALGO EVP_aes_256_cbc()
@@ -26,7 +27,8 @@
 void enc(FILE *inFilePointer, FILE *outFilePointer, unsigned char * realkey);
 
 /* generate_file_key produces a filename from an hmac key (oftentimes a string), 
- *   the length of the resulting key (in bytes) is written to file_key_length
+ *   the length of the resulting key (in bytes) is written to file_key_length.
+ *	 The with_digest flag forces an extra hashing round...
  */
 unsigned char* generate_file_key(const unsigned char *filename, unsigned char* key,
 	unsigned int keylength, unsigned int *file_key_length);
